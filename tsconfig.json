@@ -4,13 +4,6 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "jsx": "react-native",
-    "lib": [
-      "es2017"
-    ],
     "types": [
       "react-native",
       "jest"
