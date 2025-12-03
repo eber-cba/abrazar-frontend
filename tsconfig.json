@@ -8,14 +8,17 @@
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "jsx": "react-native",
-    "lib": ["es2017"],
-    "types": ["react-native", "jest"]
+    "lib": [
+      "es2017"
+    ],
+    "types": [
+      "react-native",
+      "jest"
+    ]
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "**/*.tsx"
   ],
   "exclude": [
     "node_modules"
