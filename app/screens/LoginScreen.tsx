@@ -17,22 +17,62 @@ export default function LoginScreen({ navigation }: Props) {
       const response = await api.post('/auth/login', credentials);
       return response.data;
     },
-    onSuccess: (data) => {
-      Alert.alert('¡Éxito!', 'Login exitoso');
-      // Aquí guardarías el token y navegarías a la app
-      console.log('Token:', data.token);
+    onSuccess: async (data) => {
+      try {
+        // Guardar token en storage
+        const { saveToken, saveUserData } = await import('../utils/storage');
+        
+        if (data.accessToken || data.token) {
+          await saveToken(data.accessToken || data.token);
+        }
+        
+        // Guardar datos del usuario si vienen en la respuesta
+        if (data.user) {
+          await saveUserData(data.user);
+        }
+        
+        Alert.alert('¡Éxito!', 'Bienvenido a Abrazar', [
+          {
+            text: 'OK',
+            onPress: () => navigation.replace('Home')
+          }
+        ]);
+        
+        console.log('Login exitoso - Usuario:', data.user?.name || 'N/A');
+      } catch (error) {
+        console.error('Error saving login data:', error);
+        Alert.alert('Error', 'Login exitoso pero hubo un problema guardando datos');
+      }
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.response?.data?.message || 'Error al iniciar sesión');
+      console.error('Login Error Details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        config: {
+          url: error.config?.url,
+          baseURL: error.config?.baseURL,
+          method: error.config?.method
+        }
+      });
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Error al iniciar sesión';
+      Alert.alert('Error de Login', `Status: ${error.response?.status || 'N/A'}\n${errorMessage}`);
     },
   });
 
   const handleLogin = () => {
-    if (!email || !password) {
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+    
+    if (!trimmedEmail || !trimmedPassword) {
       Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
-    loginMutation.mutate({ email, password });
+    
+    console.log('Attempting login with:', { email: trimmedEmail });
+    loginMutation.mutate({ email: trimmedEmail, password: trimmedPassword });
   };
 
   return (
