@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './app/navigation/AppNavigator';
 import { queryClient } from './app/config/react-query';
+import { ErrorBoundary } from './app/components/ErrorBoundary';
 
 /**
  * Main App Component
@@ -12,14 +13,18 @@ import { queryClient } from './app/config/react-query';
  * - Intelligent retry logic (exponential backoff, network-aware)
  * - Offline-first support
  * - Auto refetch on reconnect and window focus
+ * 
+ * ErrorBoundary catches and ignores Expo Update errors in development
  */
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <NavigationContainer>
-        <AppNavigator />
-        <StatusBar style="auto" />
-      </NavigationContainer>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <NavigationContainer>
+          <AppNavigator />
+          <StatusBar style="auto" />
+        </NavigationContainer>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
