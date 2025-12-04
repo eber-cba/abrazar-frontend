@@ -83,19 +83,37 @@ export const homelessService = {
   getById: (id: string) =>
     api.get(`/homeless/${id}`),
   
+  getStats: () =>
+    api.get('/homeless/stats'),
+  
   create: (data: any) =>
     api.post('/homeless', data),
   
   update: (id: string, data: any) =>
     api.patch(`/homeless/${id}`, data),
+  
+  delete: (id: string) =>
+    api.delete(`/homeless/${id}`),
 };
 
 export const servicePointsService = {
   getAll: () =>
     api.get('/service-points'),
   
-  getNearby: (lat: number, lng: number, radius: number = 5 ) =>
+  getById: (id: string) =>
+    api.get(`/service-points/${id}`),
+  
+  getNearby: (lat: number, lng: number, radius: number = 5) =>
     api.get('/service-points/nearby', { params: { lat, lng, radius } }),
+  
+  create: (data: any) =>
+    api.post('/service-points', data),
+  
+  update: (id: string, data: any) =>
+    api.patch(`/service-points/${id}`, data),
+  
+  delete: (id: string) =>
+    api.delete(`/service-points/${id}`),
 };
 
 // Exportar servicios individuales si es necesario

@@ -127,15 +127,6 @@ export const queryKeys = {
     detail: (id: string) => ['personas', 'detail', id] as const,
   },
   
-  // Service Points
-  servicePoints: {
-    all: ['service-points'] as const,
-    list: (filters?: Record<string, any>) => ['service-points', 'list', filters] as const,
-    detail: (id: string) => ['service-points', 'detail', id] as const,
-    nearby: (lat: number, lng: number, radius: number) => 
-      ['service-points', 'nearby', { lat, lng, radius }] as const,
-  },
-  
   // Organizations
   organizations: {
     all: ['organizations'] as const,
@@ -150,6 +141,22 @@ export const queryKeys = {
     detail: (id: string) => ['users', 'detail', id] as const,
   },
   
+  // Service Points
+  servicePoints: {
+    all: ['service-points'] as const,
+    list: (filters?: Record<string, any>) => ['service-points', 'list', filters] as const,
+    detail: (id: string) => ['service-points', 'detail', id] as const,
+    nearby: (lat: number, lng: number, radius: number) => ['service-points', 'nearby', { lat, lng, radius }] as const,
+  },
+
+  // Homeless / Personas
+  homeless: {
+    all: ['homeless'] as const,
+    list: (filters?: Record<string, any>) => ['homeless', 'list', filters] as const,
+    detail: (id: string) => ['homeless', 'detail', id] as const,
+    stats: ['homeless', 'stats'] as const,
+  },
+
   // Admin
   admin: {
     stats: ['admin', 'stats'] as const,
