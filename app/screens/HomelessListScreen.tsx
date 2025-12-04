@@ -11,11 +11,13 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useHomelessList } from '../hooks/useHomeless';
+import { usePermissions } from '../hooks/usePermissions';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'HomelessList'>;
 
 export default function HomelessListScreen({ navigation }: Props) {
   const { data: persons, isLoading, error, refetch, isRefetching } = useHomelessList();
+  const { canEditHomeless, canDeleteHomeless, role } = usePermissions();
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
@@ -69,6 +71,28 @@ export default function HomelessListScreen({ navigation }: Props) {
         <Text style={styles.cardDate}>
           Última interacción: {new Date(item.lastInteraction).toLocaleDateString()}
         </Text>
+      )}
+
+      {/* Action buttons based on permissions */}
+      {(canEditHomeless || canDeleteHomeless) && (
+        <View style={styles.cardActions}>
+          {canEditHomeless && (
+            <TouchableOpacity 
+              style={styles.editButton}
+              onPress={() => console.log('Edit:', item.id)}
+            >
+              <Text style={styles.editButtonText}>✏️ Editar</Text>
+            </TouchableOpacity>
+          )}
+          {canDeleteHomeless && (
+            <TouchableOpacity 
+              style={styles.deleteButton}
+              onPress={() => console.log('Delete:', item.id)}
+            >
+              <Text style={styles.deleteButtonText}>🗑️ Eliminar</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -259,6 +283,35 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  cardActions: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 10,
+  },
+  editButton:{
+    flex: 1,
+    backgroundColor: '#3498db',
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  editButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  deleteButton: {
+    flex: 1,
+    backgroundColor: '#e74c3c',
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontSize: 14,
     fontWeight: '600',
   },
 });

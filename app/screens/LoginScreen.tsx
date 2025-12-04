@@ -31,12 +31,10 @@ export default function LoginScreen({ navigation }: Props) {
           await saveUserData(data.user);
         }
         
-        Alert.alert('¡Éxito!', 'Bienvenido a Abrazar', [
-          {
-            text: 'OK',
-            onPress: () => navigation.replace('Home')
-          }
-        ]);
+        // Navegar directamente al Dashboard después del login exitoso
+        navigation.replace('Dashboard');
+        
+        Alert.alert('¡Éxito!', 'Bienvenido a Abrazar');
         
         console.log('Login exitoso - Usuario:', data.user?.name || 'N/A');
       } catch (error) {

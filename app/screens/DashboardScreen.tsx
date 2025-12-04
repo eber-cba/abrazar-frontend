@@ -3,12 +3,31 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useCurrentUser, useLogout } from '../hooks/useAuth';
+import { usePermissions } from '../hooks/usePermissions';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>;
 
 export default function DashboardScreen({ navigation }: Props) {
   const { data: user, isLoading } = useCurrentUser();
   const logout = useLogout();
+  const { role, canManageUsers, canEditHomeless, canDeleteHomeless } = usePermissions();
+
+  const getRoleBadge = () => {
+    switch (role) {
+      case 'ADMIN':
+        return { icon: '🔑', label: 'Administrador', color: '#e74c3c' };
+      case 'MUNICIPALITY':
+        return { icon: '🏛️', label: 'Municipalidad', color: '#3498db' };
+      case 'NGO':
+        return { icon: '🤝', label: 'ONG', color: '#2ecc71' };
+      case 'VOLUNTEER':
+        return { icon: '👤', label: 'Voluntario', color: '#95a5a6' };
+      default:
+        return { icon: '📋', label: 'Usuario', color: '#7f8c8d' };
+    }
+  };
+
+  const roleBadge = getRoleBadge();
 
   const handleLogout = async () => {
     Alert.alert(
@@ -51,12 +70,31 @@ export default function DashboardScreen({ navigation }: Props) {
       
       {user && (
         <View style={styles.userCard}>
-          <Text style={styles.welcomeText}>Bienvenido/a,</Text>
+          <View style={styles.roleHeader}>
+            <Text style={styles.welcomeText}>Bienvenido/a,</Text>
+            <View style={[styles.roleBadge, { backgroundColor: roleBadge.color }]}>
+              <Text style={styles.roleBadgeText}>
+                {roleBadge.icon} {roleBadge.label}
+              </Text>
+            </View>
+          </View>
           <Text style={styles.userName}>{user.name || 'Usuario'}</Text>
           <Text style={styles.userEmail}>{user.email}</Text>
-          <Text style={styles.userRole}>Rol: {user.role}</Text>
         </View>
       )}
+
+      <View style={styles.permissionsBox}>
+        <Text style={styles.permissionsTitle}>Tus permisos:</Text>
+        <Text style={styles.permissionItem}>
+          {canManageUsers ? '✅' : '❌'} Gestionar usuarios
+        </Text>
+        <Text style={styles.permissionItem}>
+          {canEditHomeless ? '✅' : '❌'} Editar personas
+        </Text>
+        <Text style={styles.permissionItem}>
+          {canDeleteHomeless ? '✅' : '❌'} Eliminar registros
+        </Text>
+      </View>
 
       <View style={styles.infoBox}>
         <Text style={styles.infoTitle}>✅ Sistema conectado:</Text>
@@ -102,12 +140,28 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     width: '100%',
     maxWidth: 350,
-    marginBottom: 30,
+    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  roleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  roleBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  roleBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   welcomeText: {
     fontSize: 16,
@@ -137,6 +191,30 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 350,
     marginBottom: 20,
+  },
+  permissionsBox: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 8,
+    width: '100%',
+    maxWidth: 350,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  permissionsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 10,
+  },
+  permissionItem: {
+    fontSize: 14,
+    color: '#34495e',
+    marginBottom: 6,
   },
   infoTitle: {
     fontSize: 16,
