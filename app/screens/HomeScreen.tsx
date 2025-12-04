@@ -20,6 +20,13 @@ export default function HomeScreen({ navigation }: Props) {
         <Text style={styles.buttonText}>Ir a Login</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={[styles.button, styles.secondaryButton]}
+        onPress={() => navigation.navigate('HomelessList')}
+      >
+        <Text style={styles.buttonText}>📋 Ver Lista de Personas</Text>
+      </TouchableOpacity>
+
       <View style={styles.infoBox}>
         <Text style={styles.infoTitle}>✅ Configuración lista:</Text>
         <Text style={styles.infoItem}>• React Navigation</Text>
@@ -57,7 +64,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     paddingVertical: 15,
     borderRadius: 8,
-    marginBottom: 40,
+    marginBottom: 15,
+  },
+  secondaryButton: {
+    backgroundColor: '#2ecc71',
   },
   buttonText: {
     color: '#fff',
