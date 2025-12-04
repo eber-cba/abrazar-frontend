@@ -1,11 +1,10 @@
 import axios from 'axios';
+import { getToken } from '../utils/storage';
 
 // 🔧 Configuración del cliente API
 // Conexión al backend de Abrazar (Node.js + Express + Prisma)
 
-// Base URL del backend
-// En desarrollo: http://localhost:3000
-// En producción: tu dominio de Railway/Vercel
+// Base URL del backend desde variables de entorno
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
 // Crear instancia de Axios
@@ -17,14 +16,19 @@ export const api = axios.create({
   },
 });
 
-// Interceptor para agregar token de autenticación
+// Set baseURL directly on instance (recommended approach)
+api.defaults.baseURL = `${API_BASE_URL}/api`;
+
+// Interceptor para agregar token de autenticación automáticamente
 api.interceptors.request.use(
   async (config) => {
-    // Aquí obtendrías el token del storage (AsyncStorage o SecureStore)
-    // const token = await AsyncStorage.getItem('token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    // Obtener token del storage
+    const token = await getToken();
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
     return config;
   },
   (error) => {
@@ -38,14 +42,15 @@ api.interceptors.response.use(
   async (error) => {
     const status = error.response?.status;
 
-    // Manejar token expirado
+    // Manejar token expirado (401)
     if (status === 401) {
-      // Lógica para refrescar token o cerrar sesión
+      // TODO: Implementar refresh token o cerrar sesión
       console.log('Token expirado, redirigir a login');
+      // Podrías emitir un evento o llamar a logout aquí
     }
 
-    // Manejar error de servidor
-    if (status >= 500) {
+    // Manejar error de servidor (5xx)
+    if (status && status >= 500) {
       console.error('Error del servidor:', error.response?.data);
     }
 
