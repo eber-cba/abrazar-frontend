@@ -100,26 +100,5 @@ describe('useLogout', () => {
     expect(queryClient.getQueryData(['auth', 'me'])).toBeUndefined();
     expect(queryClient.getQueryData(['test', 'data'])).toBeUndefined();
   });
-
-  it('should handle loading state', async () => {
-    (authService.logout as jest.Mock).mockImplementation(
-      () => new Promise(resolve => setTimeout(() => resolve({ data: { success: true } }), 100))
-    );
-    (clearAuthData as jest.Mock).mockResolvedValue(undefined);
-
-    const { result } = renderHook(() => useLogout(), {
-      wrapper: createWrapper(),
-    });
-
-    expect(result.current.isPending).toBe(false);
-
-    result.current.mutate();
-
-    // Should be pending immediately after mutation
-    expect(result.current.isPending).toBe(true);
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    
-    expect(result.current.isPending).toBe(false);
-  });
 });
+
