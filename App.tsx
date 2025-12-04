@@ -1,18 +1,18 @@
 import { StatusBar } from 'expo-status-bar';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './app/navigation/AppNavigator';
+import { queryClient } from './app/config/react-query';
 
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 2,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    },
-  },
-});
-
+/**
+ * Main App Component
+ * 
+ * React Query is configured with:
+ * - Smart caching (5min stale time, 10min cache time)
+ * - Intelligent retry logic (exponential backoff, network-aware)
+ * - Offline-first support
+ * - Auto refetch on reconnect and window focus
+ */
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
