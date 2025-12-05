@@ -14,13 +14,17 @@ import {
   canCreateHomeless,
   canEditHomeless,
   canDeleteHomeless,
+  canViewCases,
+  canCreateCases,
+  canEditCases,
+  canDeleteCases,
+  canAssignCases,
   canViewServicePoints,
   canCreateServicePoint,
   canEditServicePoint,
   canDeleteServicePoint,
   canManageUsers,
   canViewStats,
-  canAssignCases,
   getRoleDisplayName,
   getRoleBadge,
   hasPermission,
@@ -58,6 +62,10 @@ export function usePermissions() {
     canDeleteServicePoint: canDeleteServicePoint(role),
     
     // Cases permissions
+    canViewCases: canViewCases(role),
+    canCreateCases: canCreateCases(role),
+    canEditCases: canEditCases(role),
+    canDeleteCases: canDeleteCases(role),
     canAssignCases: canAssignCases(role),
     
     // Stats & Users
