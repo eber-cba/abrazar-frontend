@@ -30,8 +30,8 @@ export default function DashboardScreen({ navigation }: Props) {
     canViewStats,
   } = usePermissions();
   
-  // Only fetch statistics if user has permission
-  const { data: stats, isLoading: statsLoading, error: statsError } = useStatisticsOverview();
+  // Only fetch statistics if user has permission to view them
+  const { data: stats, isLoading: statsLoading, error: statsError } = useStatisticsOverview(canViewStats);
 
   const navigationCards: NavigationCard[] = [
     {

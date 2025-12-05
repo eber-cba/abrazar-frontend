@@ -46,14 +46,16 @@ export interface ZoneStatistics {
 
 /**
  * Hook to fetch overview statistics
+ * @param enabled - Whether to execute the query (default: true)
  */
-export const useStatisticsOverview = () => {
+export const useStatisticsOverview = (enabled: boolean = true) => {
   return useQuery({
     queryKey: statisticsKeys.overview(),
     queryFn: async () => {
       const response = await statisticsService.getOverview();
       return response.data.data as StatisticsOverview;
     },
+    enabled, // Only run if enabled is true
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
