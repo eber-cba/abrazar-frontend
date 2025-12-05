@@ -14,17 +14,19 @@ export const statisticsKeys = {
   zones: () => [...statisticsKeys.all, 'zones'] as const,
 };
 
-// Types
+// Types based on backend API response
 export interface StatisticsOverview {
   totalHomeless: number;
-  activeHomeless: number;
+  activeHomeless?: number;
   totalCases: number;
-  openCases: number;
-  inProgressCases: number;
+  activeCases: number;  // Per API docs
+  openCases?: number;
+  inProgressCases?: number;
   resolvedCases: number;
-  closedCases: number;
-  totalServicePoints: number;
-  totalUsers: number;
+  closedCases?: number;
+  totalServicePoints?: number;
+  totalUsers?: number;
+  activeTeams?: number;
   organizationCount?: number;
 }
 
