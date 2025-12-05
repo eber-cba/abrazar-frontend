@@ -1,15 +1,11 @@
+import React from 'react';
 import { renderHook } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import React from 'react';
 import { usePermissions } from '../usePermissions';
+import * as storage from '../../utils/storage';
 
-// Mock the entire useAuth module
-jest.mock('../useAuth', () => ({
-  useCurrentUser: jest.fn(),
-}));
-
-// Import after mocking
-const { useCurrentUser } = require('../useAuth');
+// Mock storage
+jest.mock('../../utils/storage');
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -18,11 +14,9 @@ const createWrapper = () => {
     },
   });
 
-  const Wrapper = ({ children }: { children: React.ReactNode }) => {
-    return React.createElement(QueryClientProvider, { client: queryClient }, children);
-  };
-
-  return Wrapper;
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
 };
 
 describe('usePermissions', () => {
@@ -30,16 +24,17 @@ describe('usePermissions', () => {
     jest.clearAllMocks();
   });
 
-  it('should return all permissions for ADMIN user', () => {
-    useCurrentUser.mockReturnValue({
-      data: { id: '1', email: 'admin@test.com', role: 'ADMIN', name: 'Admin' },
-      isLoading: false,
-      error: null,
+  it('should return correct permissions for ADMIN', async () => {
+    (storage.getUserData as jest.Mock).mockResolvedValue({
+      role: 'ADMIN',
+      email: ' admin@test.com',
     });
 
     const { result } = renderHook(() => usePermissions(), {
       wrapper: createWrapper(),
     });
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     expect(result.current.role).toBe('ADMIN');
     expect(result.current.canViewHomeless).toBe(true);
@@ -48,16 +43,17 @@ describe('usePermissions', () => {
     expect(result.current.canManageUsers).toBe(true);
   });
 
-  it('should return limited permissions for VOLUNTEER user', () => {
-    useCurrentUser.mockReturnValue({
-      data: { id: '2', email: 'volunteer@test.com', role: 'VOLUNTEER', name: 'Volunteer' },
-      isLoading: false,
-      error: null,
+  it('should return correct permissions for VOLUNTEER', async () => {
+    (storage.getUserData as jest.Mock).mockResolvedValue({
+      role: 'VOLUNTEER',
+      email: 'volunteer@test.com',
     });
 
     const { result } = renderHook(() => usePermissions(), {
       wrapper: createWrapper(),
     });
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     expect(result.current.role).toBe('VOLUNTEER');
     expect(result.current.canViewHomeless).toBe(true);
@@ -66,37 +62,19 @@ describe('usePermissions', () => {
     expect(result.current.canManageUsers).toBe(false);
   });
 
-  it('should return no permissions when user is not authenticated', () => {
-    useCurrentUser.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: null,
-    });
+  it('should return no permissions for unauthenticated user', async () => {
+    (storage.getUserData as jest.Mock).mockResolvedValue(null);
 
     const { result } = renderHook(() => usePermissions(), {
       wrapper: createWrapper(),
     });
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     expect(result.current.role).toBeUndefined();
     expect(result.current.canViewHomeless).toBe(false);
     expect(result.current.canEditHomeless).toBe(false);
+    expect(result.current.canDeleteHomeless).toBe(false);
     expect(result.current.canManageUsers).toBe(false);
-  });
-
-  it('should work with hasPermission function', () => {
-    useCurrentUser.mockReturnValue({
-      data: { id: '3', email: 'ngo@test.com', role: 'NGO', name: 'NGO User' },
-      isLoading: false,
-      error: null,
-    });
-
-    const { result } = renderHook(() => usePermissions(), {
-      wrapper: createWrapper(),
-    });
-
-    expect(result.current.hasPermission('view_homeless')).toBe(true);
-    expect(result.current.hasPermission('edit_homeless')).toBe(true);
-    expect(result.current.hasPermission('delete_homeless')).toBe(false);
-    expect(result.current.hasPermission('manage_users')).toBe(false);
   });
 });

@@ -2,61 +2,95 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
+import { saveToken, saveRefreshToken, saveUserData } from '../utils/storage';
+import { sessionLogger } from '../utils/session-logger';
+import { queryKeys } from '../config/react-query';
+import axios from 'axios';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const queryClient = useQueryClient();
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
-      // Llamada al backend
+      console.log('🚀 Sending login request...');
       const response = await api.post('/auth/login', credentials);
       return response.data;
     },
-    onSuccess: async (data) => {
+    onSuccess: async (responseData) => {
       try {
-        // Guardar token en storage
-        const { saveToken, saveUserData } = await import('../utils/storage');
+        // Backend response: { status, data: { token, refreshToken, user } }
+        const data = responseData.data;
         
-        if (data.accessToken || data.token) {
-          await saveToken(data.accessToken || data.token);
+        console.log('📦 Login response:', {
+          hasToken: !!data?.token,
+          hasRefreshToken: !!data?.refreshToken,
+          hasUser: !!data?.user,
+          userRole: data?.user?.role
+        });
+        
+        // Save access token
+        if (data?.token) {
+          await saveToken(data.token);
+          console.log('✅ Access token saved');
         }
         
-        // Guardar datos del usuario si vienen en la respuesta
-        if (data.user) {
+        // Save refresh token (IMPORTANT for auto-refresh)
+        if (data?.refreshToken) {
+          await saveRefreshToken(data.refreshToken);
+          console.log('✅ Refresh token saved');
+        }
+        
+        // Save user data
+        if (data?.user) {
           await saveUserData(data.user);
+          console.log('✅ User data saved:', data.user.email);
+          
+          // Update React Query cache
+          queryClient.setQueryData(queryKeys.auth.me, data.user);
         }
         
-        // Navegar directamente al Dashboard después del login exitoso
+        // Log successful login
+        sessionLogger.logLogin(data?.user?.email);
+        
         navigation.replace('Dashboard');
+        Alert.alert('¡Éxito!', `Bienvenido ${data?.user?.name || 'a Abrazar'}`);
         
-        Alert.alert('¡Éxito!', 'Bienvenido a Abrazar');
-        
-        console.log('Login exitoso - Usuario:', data.user?.name || 'N/A');
       } catch (error) {
-        console.error('Error saving login data:', error);
+        console.error('❌ Error saving login data:', error);
         Alert.alert('Error', 'Login exitoso pero hubo un problema guardando datos');
       }
     },
     onError: (error: any) => {
-      console.error('Login Error Details:', {
+      console.error('❌ Login Error:', {
         message: error.message,
         status: error.response?.status,
-        data: error.response?.data,
-        headers: error.response?.headers,
-        config: {
-          url: error.config?.url,
-          baseURL: error.config?.baseURL,
-          method: error.config?.method
-        }
       });
       
-      const errorMessage = error.response?.data?.message || error.message || 'Error al iniciar sesión';
-      Alert.alert('Error de Login', `Status: ${error.response?.status || 'N/A'}\n${errorMessage}`);
+      // Log failed login
+      sessionLogger.logAuthError(error.message);
+      
+      let message = 'Error al iniciar sesión';
+      
+      if (axios.isAxiosError(error)) {
+        // Use userMessage from our error handler if available
+        if (error.userMessage) {
+          message = error.userMessage;
+        } else if (error.response?.status === 401) {
+          message = 'Credenciales inválidas. Verifica tu email y contraseña.';
+        } else if (error.response?.status === 429) {
+          message = 'Demasiados intentos. Por favor espera un momento.';
+        } else if (error.response?.data?.message) {
+          message = error.response.data.message;
+        }
+      }
+      
+      Alert.alert('Error de Login', message);
     },
   });
 
@@ -69,7 +103,7 @@ export default function LoginScreen({ navigation }: Props) {
       return;
     }
     
-    console.log('Attempting login with:', { email: trimmedEmail });
+    console.log('🔐 Attempting login:', { email: trimmedEmail });
     loginMutation.mutate({ email: trimmedEmail, password: trimmedPassword });
   };
 
@@ -84,6 +118,7 @@ export default function LoginScreen({ navigation }: Props) {
         onChangeText={setEmail}
         keyboardType="email-address"
         autoCapitalize="none"
+        editable={!loginMutation.isPending}
       />
 
       <TextInput
@@ -92,6 +127,7 @@ export default function LoginScreen({ navigation }: Props) {
         value={password}
         onChangeText={setPassword}
         secureTextEntry
+        editable={!loginMutation.isPending}
       />
 
       <TouchableOpacity
@@ -100,22 +136,25 @@ export default function LoginScreen({ navigation }: Props) {
         disabled={loginMutation.isPending}
       >
         <Text style={styles.buttonText}>
-          {loginMutation.isPending ? 'Cargando...' : 'Ingresar'}
+          {loginMutation.isPending ? 'Iniciando sesión...' : 'Ingresar'}
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
+        disabled={loginMutation.isPending}
       >
         <Text style={styles.backButtonText}>← Volver al inicio</Text>
       </TouchableOpacity>
 
-      <View style={styles.apiInfo}>
-        <Text style={styles.apiInfoText}>
-          🔗 Conectado al backend: {api.defaults.baseURL}
-        </Text>
-      </View>
+      {__DEV__ && (
+        <View style={styles.devInfo}>
+          <Text style={styles.devInfoText}>
+            🔗 {api.defaults.baseURL}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -170,14 +209,14 @@ const styles = StyleSheet.create({
     color: '#3498db',
     fontSize: 16,
   },
-  apiInfo: {
+  devInfo: {
     position: 'absolute',
     bottom: 20,
     backgroundColor: '#ecf0f1',
     padding: 10,
     borderRadius: 6,
   },
-  apiInfoText: {
+  devInfoText: {
     fontSize: 12,
     color: '#7f8c8d',
   },

@@ -4,20 +4,51 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useCurrentUser } from '../hooks/useAuth';
 import { getToken } from '../utils/storage';
+import { UserRole, hasRole, Permission, hasPermission } from '../utils/permissions';
+import { AccessDenied } from './AccessDenied';
 
 type Props = NativeStackScreenProps<RootStackParamList, any>;
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   navigation: Props['navigation'];
+  /**
+   * List of roles that can access this route.
+   * User must have at least one of these roles.
+   */
+  allowedRoles?: UserRole[];
+  /**
+   * Minimum role level required (uses hierarchy).
+   * Example: 'COORDINATOR' means COORDINATOR, ORG_ADMIN, and ADMIN can access.
+   */
+  minimumRole?: UserRole;
+  /**
+   * Specific permission required to access this route.
+   */
+  requiredPermission?: Permission;
+  /**
+   * Custom fallback component instead of AccessDenied
+   */
+  fallback?: React.ReactNode;
+  /**
+   * Whether to redirect to login if not authenticated (default: true)
+   */
+  redirectToLogin?: boolean;
 }
 
 /**
  * ProtectedRoute Component
- * Protects routes that require authentication
- * Redirects to Login if user is not authenticated
+ * Protects routes that require authentication and/or specific roles/permissions
  */
-export function ProtectedRoute({ children, navigation }: ProtectedRouteProps) {
+export function ProtectedRoute({ 
+  children, 
+  navigation,
+  allowedRoles,
+  minimumRole,
+  requiredPermission,
+  fallback,
+  redirectToLogin = true,
+}: ProtectedRouteProps) {
   const { data: user, isLoading, error } = useCurrentUser();
   const [hasToken, setHasToken] = useState<boolean | null>(null);
 
@@ -30,25 +61,24 @@ export function ProtectedRoute({ children, navigation }: ProtectedRouteProps) {
     checkToken();
   }, []);
 
+  // Redirect to login if no token and redirectToLogin is true
   useEffect(() => {
-    // Only redirect if we've checked for token, there's no token, and we're not loading
-    if (hasToken === false && !isLoading && !user) {
+    if (hasToken === false && !isLoading && !user && redirectToLogin) {
       navigation.replace('Login');
     }
-  }, [user, isLoading, hasToken, navigation]);
+  }, [user, isLoading, hasToken, navigation, redirectToLogin]);
 
-  // Show loading while checking auth or token
+  // Show loading while checking auth
   if (isLoading || hasToken === null) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#3498db" />
-        <Text style={styles.text}>Verificando autenticación...</Text>
+        <Text style={styles.loadingText}>Verificando autenticación...</Text>
       </View>
     );
   }
 
-  // If there's an error but we have a token, show error but don't redirect
-  // This handles cases where the /me endpoint fails but user might still be authenticated
+  // Handle error with token present
   if (error && hasToken) {
     return (
       <View style={styles.container}>
@@ -61,13 +91,85 @@ export function ProtectedRoute({ children, navigation }: ProtectedRouteProps) {
     );
   }
 
-  // If no token and not loading, will redirect (handled by useEffect)
+  // No token and not loading - will redirect
   if (!hasToken && !user) {
     return null;
   }
 
-  // User is authenticated or has token, render children
+  const userRole = user?.role as UserRole | undefined;
+
+  // Check role-based access
+  if (allowedRoles && allowedRoles.length > 0) {
+    const hasAllowedRole = allowedRoles.some(role => 
+      userRole === role || hasRole(userRole, role)
+    );
+    
+    if (!hasAllowedRole) {
+      if (fallback) {
+        return <>{fallback}</>;
+      }
+      return (
+        <AccessDenied
+          userRole={userRole}
+          requiredRoles={allowedRoles}
+          onGoBack={() => navigation.goBack()}
+          onGoHome={() => navigation.navigate('Home')}
+        />
+      );
+    }
+  }
+
+  // Check minimum role level (hierarchy-based)
+  if (minimumRole) {
+    if (!hasRole(userRole, minimumRole)) {
+      if (fallback) {
+        return <>{fallback}</>;
+      }
+      return (
+        <AccessDenied
+          userRole={userRole}
+          requiredRoles={[minimumRole]}
+          onGoBack={() => navigation.goBack()}
+          onGoHome={() => navigation.navigate('Home')}
+        />
+      );
+    }
+  }
+
+  // Check specific permission
+  if (requiredPermission) {
+    if (!hasPermission(userRole, requiredPermission)) {
+      if (fallback) {
+        return <>{fallback}</>;
+      }
+      return (
+        <AccessDenied
+          userRole={userRole}
+          onGoBack={() => navigation.goBack()}
+          onGoHome={() => navigation.navigate('Home')}
+        />
+      );
+    }
+  }
+
+  // All checks passed - render children
   return <>{children}</>;
+}
+
+/**
+ * Higher-order component version for wrapping screens
+ */
+export function withProtectedRoute<P extends object>(
+  WrappedComponent: React.ComponentType<P>,
+  options?: Omit<ProtectedRouteProps, 'children' | 'navigation'>
+) {
+  return function ProtectedScreen(props: P & { navigation: Props['navigation'] }) {
+    return (
+      <ProtectedRoute navigation={props.navigation} {...options}>
+        <WrappedComponent {...props} />
+      </ProtectedRoute>
+    );
+  };
 }
 
 const styles = StyleSheet.create({
@@ -78,7 +180,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     padding: 20,
   },
-  text: {
+  loadingText: {
     marginTop: 10,
     fontSize: 16,
     color: '#7f8c8d',

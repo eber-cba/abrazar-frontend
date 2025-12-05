@@ -1,21 +1,28 @@
 /**
  * usePermissions Hook
- * React hook for accessing permission checks based on current user role
+ * Easy access to permission checks based on current user's role
  */
 
 import { useCurrentUser } from './useAuth';
 import {
   UserRole,
+  hasRole,
+  canEdit,
+  canDelete,
+  canManageTeams,
   canViewHomeless,
+  canCreateHomeless,
   canEditHomeless,
   canDeleteHomeless,
-  canCreateHomeless,
   canViewServicePoints,
   canCreateServicePoint,
   canEditServicePoint,
   canDeleteServicePoint,
   canManageUsers,
   canViewStats,
+  canAssignCases,
+  getRoleDisplayName,
+  getRoleBadge,
   hasPermission,
   Permission,
 } from '../utils/permissions';
@@ -25,17 +32,39 @@ export function usePermissions() {
   const role = user?.role as UserRole | undefined;
 
   return {
+    // User info
     role,
-    hasPermission: (permission: Permission) => hasPermission(role, permission),
+    roleDisplayName: getRoleDisplayName(role),
+    roleBadge: getRoleBadge(role),
+    
+    // Role checks
+    hasRole: (requiredRole: UserRole) => hasRole(role, requiredRole),
+    
+    // Generic permissions
+    canEdit: canEdit(role),
+    canDelete: canDelete(role),
+    canManageTeams: canManageTeams(role),
+    
+    // Homeless/Persons permissions
     canViewHomeless: canViewHomeless(role),
+    canCreateHomeless: canCreateHomeless(role),
     canEditHomeless: canEditHomeless(role),
     canDeleteHomeless: canDeleteHomeless(role),
-    canCreateHomeless: canCreateHomeless(role),
+    
+    // Service Points permissions
     canViewServicePoints: canViewServicePoints(role),
     canCreateServicePoint: canCreateServicePoint(role),
     canEditServicePoint: canEditServicePoint(role),
     canDeleteServicePoint: canDeleteServicePoint(role),
-    canManageUsers: canManageUsers(role),
+    
+    // Cases permissions
+    canAssignCases: canAssignCases(role),
+    
+    // Stats & Users
     canViewStats: canViewStats(role),
+    canManageUsers: canManageUsers(role),
+    
+    // Legacy hasPermission for backward compatibility
+    hasPermission: (permission: Permission) => hasPermission(role, permission),
   };
 }

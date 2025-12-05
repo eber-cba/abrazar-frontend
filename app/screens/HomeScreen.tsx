@@ -1,11 +1,34 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { getToken, getUserData } from '../utils/storage';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: Props) {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [userName, setUserName] = useState<string>('');
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    const token = await getToken();
+    const userData = await getUserData();
+    setIsAuthenticated(!!token);
+    setUserName(userData?.name || '');
+  };
+
+  if (isAuthenticated === null) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#3498db" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>🏠 Bienvenido a Abrazar</Text>
@@ -13,12 +36,30 @@ export default function HomeScreen({ navigation }: Props) {
         Plataforma de asistencia a personas en situación de calle
       </Text>
       
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.navigate('Login')}
-      >
-        <Text style={styles.buttonText}>Ir a Login</Text>
-      </TouchableOpacity>
+      {isAuthenticated && userName && (
+        <View style={styles.welcomeCard}>
+          <Text style={styles.welcomeText}>👋 Hola, {userName}</Text>
+          <Text style={styles.welcomeSubtext}>Sesión activa</Text>
+        </View>
+      )}
+      
+      {!isAuthenticated && (
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('Login')}
+        >
+          <Text style={styles.buttonText}>Ir a Login</Text>
+        </TouchableOpacity>
+      )}
+
+      {isAuthenticated && (
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('Dashboard')}
+        >
+          <Text style={styles.buttonText}>Ir al Panel</Text>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity
         style={[styles.button, styles.secondaryButton]}
@@ -68,6 +109,29 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     backgroundColor: '#2ecc71',
+  },
+  welcomeCard: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+    width: '100%',
+    maxWidth: 350,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  welcomeText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 5,
+  },
+  welcomeSubtext: {
+    fontSize: 14,
+    color: '#2ecc71',
   },
   buttonText: {
     color: '#fff',

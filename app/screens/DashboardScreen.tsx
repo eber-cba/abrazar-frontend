@@ -10,24 +10,15 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>;
 export default function DashboardScreen({ navigation }: Props) {
   const { data: user, isLoading } = useCurrentUser();
   const logout = useLogout();
-  const { role, canManageUsers, canEditHomeless, canDeleteHomeless } = usePermissions();
+  const { 
+    role, 
+    roleBadge, 
+    roleDisplayName,
+    canManageUsers, 
+    canEditHomeless, 
+    canDeleteHomeless 
+  } = usePermissions();
 
-  const getRoleBadge = () => {
-    switch (role) {
-      case 'ADMIN':
-        return { icon: '🔑', label: 'Administrador', color: '#e74c3c' };
-      case 'MUNICIPALITY':
-        return { icon: '🏛️', label: 'Municipalidad', color: '#3498db' };
-      case 'NGO':
-        return { icon: '🤝', label: 'ONG', color: '#2ecc71' };
-      case 'VOLUNTEER':
-        return { icon: '👤', label: 'Voluntario', color: '#95a5a6' };
-      default:
-        return { icon: '📋', label: 'Usuario', color: '#7f8c8d' };
-    }
-  };
-
-  const roleBadge = getRoleBadge();
 
   const handleLogout = async () => {
     Alert.alert(

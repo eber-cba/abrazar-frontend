@@ -1,57 +1,30 @@
 /**
  * Authentication Hooks
  * React Query hooks for authentication
+ * NOTE: Backend doesn't have GET /api/auth/me, so we use AsyncStorage
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authService } from '../services/api';
 import { queryKeys } from '../config/react-query';
-import { saveToken, clearAuthData } from '../utils/storage';
-import { handleError } from '../utils/error-handler';
-import type { AuthResponse, User } from '../types';
+import { saveToken, getUserData, clearAuthData } from '../utils/storage';
 
 /**
- * Get current authenticated user
- * Automatically syncs across entire app
+ * Get current user from AsyncStorage (NO API call)
+ * Backend doesn't have GET /api/auth/me endpoint
  */
 export const useCurrentUser = () => {
   return useQuery({
     queryKey: queryKeys.auth.me,
     queryFn: async () => {
-      const response = await authService.me();
-      return response.data as User;
+      const userData = await getUserData();
+      if (!userData) {
+        return null;
+      }
+      return userData;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: false, // Don't retry auth requests
-  });
-};
-
-/**
- * Login mutation
- */
-export const useLogin = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      const response = await authService.login(email, password);
-      return response.data as AuthResponse;
-    },
-    onSuccess: async (data) => {
-      // Save token
-      await saveToken(data.accessToken);
-      
-      // Set user data in cache
-      queryClient.setQueryData(queryKeys.auth.me, data.user);
-      
-      // Invalidate to refetch fresh data
-      queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
-    },
-    onError: (error) => {
-      const message = handleError(error);
-      console.error('Login error:', message);
-      // You can show a toast/alert here
-    },
+    staleTime: Infinity, // User data doesn't change unless we update it
+    retry: false,
   });
 };
 
@@ -60,7 +33,7 @@ export const useLogin = () => {
  */
 export const useLogout = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async () => {
       try {
@@ -73,37 +46,9 @@ export const useLogout = () => {
     onSuccess: async () => {
       // Clear all auth data
       await clearAuthData();
-      
+
       // Clear all queries
       queryClient.clear();
-    },
-  });
-};
-
-/**
- * Register mutation (if registration is supported)
- */
-export const useRegister = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (data: any) => {
-      const response = await authService.register(data);
-      return response.data as AuthResponse;
-    },
-    onSuccess: async (data) => {
-      // Save token
-      await saveToken(data.accessToken);
-      
-      // Set user data in cache
-      queryClient.setQueryData(queryKeys.auth.me, data.user);
-      
-      // Invalidate to refetch fresh data
-      queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
-    },
-    onError: (error) => {
-      const message = handleError(error);
-      console.error('Register error:', message);
     },
   });
 };
@@ -113,7 +58,7 @@ export const useRegister = () => {
  */
 export const useIsAuthenticated = () => {
   const { data: user, isLoading } = useCurrentUser();
-  
+
   return {
     isAuthenticated: !!user,
     isLoading,
