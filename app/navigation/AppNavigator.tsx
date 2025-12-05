@@ -5,6 +5,7 @@ import LoginScreen from '../screens/LoginScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import HomelessListScreen from '../screens/HomelessListScreen';
 import CasesListScreen from '../screens/CasesListScreen';
+import StatisticsScreen from '../screens/StatisticsScreen';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -12,6 +13,7 @@ export type RootStackParamList = {
   Dashboard: undefined;
   HomelessList: undefined;
   CasesList: undefined;
+  Statistics: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -54,6 +56,11 @@ export default function AppNavigator() {
         name="CasesList"
         component={CasesListScreen}
         options={{ title: 'Casos' }}
+      />
+      <Stack.Screen
+        name="Statistics"
+        component={StatisticsScreen}
+        options={{ title: 'Estadísticas' }}
       />
     </Stack.Navigator>
   );
