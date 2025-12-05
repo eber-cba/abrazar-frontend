@@ -4,7 +4,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useCurrentUser, useLogout } from '../hooks/useAuth';
 import { usePermissions } from '../hooks/usePermissions';
-import { useStatisticsOverview } from '../hooks/useStatistics';
+// Temporarily disabled until backend endpoint is confirmed
+// import { useStatisticsOverview } from '../hooks/useStatistics';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Dashboard'>;
 
@@ -20,7 +21,11 @@ interface NavigationCard {
 export default function DashboardScreen({ navigation }: Props) {
   const { data: user, isLoading } = useCurrentUser();
   const logout = useLogout();
-  const { data: stats, isLoading: statsLoading } = useStatisticsOverview();
+  
+  // Disable statistics temporarily if endpoint is not available
+  // const { data: stats, isLoading: statsLoading } = useStatisticsOverview();
+  const stats = null; // Placeholder until backend endpoint is confirmed
+  
   const { 
     role, 
     roleBadge, 
@@ -38,7 +43,6 @@ export default function DashboardScreen({ navigation }: Props) {
       screen: 'HomelessList',
       color: '#3498db',
       enabled: canViewHomeless,
-      count: stats?.totalHomeless,
     },
     {
       title: 'Casos',
@@ -46,7 +50,6 @@ export default function DashboardScreen({ navigation }: Props) {
       screen: 'CasesList',
       color: '#9b59b6',
       enabled: canViewCases,
-      count: stats?.totalCases,
     },
     {
       title: 'Estadísticas',
@@ -61,7 +64,6 @@ export default function DashboardScreen({ navigation }: Props) {
       screen: 'ServicePoints',
       color: '#27ae60',
       enabled: canViewServicePoints,
-      count: stats?.totalServicePoints,
     },
   ];
 
@@ -117,8 +119,8 @@ export default function DashboardScreen({ navigation }: Props) {
         )}
       </View>
 
-      {/* Quick Stats */}
-      {canViewStats && stats && (
+      {/* Quick Stats - Disabled until backend endpoint is available */}
+      {/* {canViewStats && stats && (
         <View style={styles.statsContainer}>
           <Text style={styles.sectionTitle}>Resumen Rápido</Text>
           <View style={styles.statsGrid}>
@@ -134,7 +136,7 @@ export default function DashboardScreen({ navigation }: Props) {
             </View>
           </View>
         </View>
-      )}
+      )} */}
 
       {/* Navigation Cards */}
       <View style={styles.navigationSection}>
